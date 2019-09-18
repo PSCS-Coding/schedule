@@ -2,160 +2,161 @@
 const fetch = require('node-fetch');
 
 // this will probably need to be messed with a lot, but I figure it's a good starting point
-const stickerWeights = [4, 2, 1];
+const stickerWeights = [5, 3, 1];
+let totalHurt = 0;
 
 const slots = [
   {
-    day: 'monday',
-    start: '9:20am',
+    day: 'mon',
+    start: '09:20am',
     end: '10:30am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'monday',
+    day: 'mon',
     start: '10:35am',
     end: '11:45am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'monday',
+    day: 'mon',
     start: '12:30pm',
-    end: '1:25pm',
+    end: '01:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'monday',
-    start: '1:30pm',
-    end: '2:25pm',
+    day: 'mon',
+    start: '01:30pm',
+    end: '02:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'monday',
-    start: '2:30pm',
-    end: '3:25pm',
+    day: 'mon',
+    start: '02:30pm',
+    end: '03:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'tuesday',
-    start: '9:20am',
+    day: 'tue',
+    start: '09:20am',
     end: '10:30am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'tuesday',
+    day: 'tue',
     start: '10:35am',
     end: '11:45am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'tuesday',
+    day: 'tue',
     start: '12:30pm',
-    end: '1:25pm',
+    end: '01:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'tuesday',
-    start: '1:30pm',
-    end: '2:25pm',
+    day: 'tue',
+    start: '01:30pm',
+    end: '02:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'tuesday',
-    start: '2:30pm',
-    end: '3:25pm',
+    day: 'tue',
+    start: '02:30pm',
+    end: '03:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'wednesday',
-    start: '9:20am',
+    day: 'wed',
+    start: '09:20am',
     end: '10:30am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'wednesday',
+    day: 'wed',
     start: '10:35am',
     end: '11:45am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'wednesday',
+    day: 'wed',
     start: '12:30pm',
-    end: '3:25pm',
+    end: '03:25pm',
     mega: '1',
     classes: [],
   },
   {
-    day: 'thursday',
-    start: '9:20am',
+    day: 'thu',
+    start: '09:20am',
     end: '10:30am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'thursday',
+    day: 'thu',
     start: '10:35am',
     end: '11:45am',
     mega: '0',
     classes: [],
   },
   {
-    day: 'thursday',
+    day: 'thu',
     start: '12:30pm',
-    end: '1:25pm',
+    end: '01:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'thursday',
-    start: '1:30pm',
-    end: '2:25pm',
+    day: 'thu',
+    start: '01:30pm',
+    end: '02:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'thursday',
-    start: '2:30pm',
-    end: '3:25pm',
+    day: 'thu',
+    start: '02:30pm',
+    end: '03:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'friday',
-    start: '9:20am',
+    day: 'fri',
+    start: '09:20am',
     end: '11:45am',
     mega: '1',
     classes: [],
   },
   {
-    day: 'friday',
+    day: 'fri',
     start: '12:30pm',
-    end: '1:25pm',
+    end: '01:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'friday',
-    start: '1:30pm',
-    end: '2:25pm',
+    day: 'fri',
+    start: '01:30pm',
+    end: '02:25pm',
     mega: '0',
     classes: [],
   },
   {
-    day: 'friday',
-    start: '2:30pm',
-    end: '3:25pm',
+    day: 'fri',
+    start: '02:30pm',
+    end: '03:25pm',
     mega: '0',
     classes: [],
   },
@@ -177,21 +178,11 @@ function canBePlaced(scheduleData, offering, slot) {
   }
 
   // for each slot
-  Object.values(classData).forEach((e) => {
-    // if the facilitator is the same
-    if (e.facilitator === offering.facilitator) {
+  for (let i = 0; i < classData.length; i += 1) {
+    if (offering.facilitator.split(' & ').includes(classData[i].facilitator)) {
       return false;
     }
-    // if there are multiple facilitators and one is the same
-    if (e.facilitator.split('&').includes(offering.facilitator)) {
-      return false;
-    }
-    // if there are multiple facils on your class and one is the same
-    if (offering.facilitator.split('&').includes(e.facilitator)) {
-      return false;
-    }
-    return true;
-  });
+  }
 
   return true;
 }
@@ -232,21 +223,7 @@ async function buildHurts() {
   });
 
   // convert facilitators set to array and sort it by how many &s there are so the multi facil classes are first
-  const facilitators = Array.from(facilitatorSet).sort((a, b) => (b.match(/&/g) || []).length - (a.match(/&/g) || []).length);
-
-  // this is where we should place the first facil's classes onto the schedule somehow
-  scheduleData.filter(o => o.facilitator === facilitators[0]).forEach((offering) => {
-    Object.keys(slots).every((slot) => {
-      if (canBePlaced(scheduleData, offering, slots[slot])) {
-        slots[slot].classes.push(offering.classId);
-        return false; // returning false breaks the loop here
-      }
-      return true;
-    });
-  });
-
-  // after the first facil's classes have been placed, remove them from facil array
-  facilitators.shift();
+  const facilitators = Array.from(facilitatorSet).sort((a, b) => (a.match(/&/g) || []).length - (b.match(/&/g) || []).length);
 
   // loop through remaining facilitators
   facilitators.forEach((facilitator) => {
@@ -315,17 +292,20 @@ async function buildHurts() {
     placement.forEach((classIndex, slot) => {
       if (classIndex === null) return;
       slots[slot].classes.push(classIds[classIndex]);
+      console.log(`Slot: ${slots[slot].day} ${slots[slot].start} Hurt: ${facilHurt[slot][classIndex]}`);
+      totalHurt += facilHurt[slot][classIndex];
     });
   });
 
   // log all of the classes at their specific times
   Object.values(slots).forEach((slot) => {
-    console.log(`${slot.day} ${slot.start}: `);
+    console.log(`${slot.day} ${slot.start}---------------------------------------------------------------------------- `);
     slot.classes.forEach((offering) => {
       const c = scheduleData.filter(o => o.classId === offering)[0];
       console.log(`\t${c.className} (${c.facilitator})`);
     });
   });
+  console.log(`Total Hurt: ${totalHurt}`);
 }
 
 buildHurts();
