@@ -4,40 +4,162 @@ const fetch = require('node-fetch');
 // this will probably need to be messed with a lot, but I figure it's a good starting point
 const stickerWeights = [4, 2, 1];
 
-const slots = {
-  monday: [
-    {
-      start: '9:20am',
-      end: '10:30am',
-      block: false,
-      classes: [],
-    },
-    {
-      start: '10:35am',
-      end: '11:45am',
-      block: false,
-      classes: [],
-    },
-    {
-      start: '12:25pm',
-      end: '1:20pm',
-      block: true,
-      classes: [],
-    },
-    {
-      start: '1:25pm',
-      end: '2:20pm',
-      block: false,
-      classes: [],
-    },
-    {
-      start: '2:25pm',
-      end: '3:15pm',
-      block: false,
-      classes: [],
-    },
-  ],
-};
+const slots = [
+  {
+    day: 'monday',
+    start: '9:20am',
+    end: '10:30am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'monday',
+    start: '10:35am',
+    end: '11:45am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'monday',
+    start: '12:30pm',
+    end: '1:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'monday',
+    start: '1:30pm',
+    end: '2:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'monday',
+    start: '2:30pm',
+    end: '3:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'tuesday',
+    start: '9:20am',
+    end: '10:30am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'tuesday',
+    start: '10:35am',
+    end: '11:45am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'tuesday',
+    start: '12:30pm',
+    end: '1:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'tuesday',
+    start: '1:30pm',
+    end: '2:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'tuesday',
+    start: '2:30pm',
+    end: '3:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'wednesday',
+    start: '9:20am',
+    end: '10:30am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'wednesday',
+    start: '10:35am',
+    end: '11:45am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'wednesday',
+    start: '12:30pm',
+    end: '3:25pm',
+    mega: '1',
+    classes: [],
+  },
+  {
+    day: 'thursday',
+    start: '9:20am',
+    end: '10:30am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'thursday',
+    start: '10:35am',
+    end: '11:45am',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'thursday',
+    start: '12:30pm',
+    end: '1:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'thursday',
+    start: '1:30pm',
+    end: '2:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'thursday',
+    start: '2:30pm',
+    end: '3:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'friday',
+    start: '9:20am',
+    end: '11:45am',
+    mega: '1',
+    classes: [],
+  },
+  {
+    day: 'friday',
+    start: '12:30pm',
+    end: '1:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'friday',
+    start: '1:30pm',
+    end: '2:25pm',
+    mega: '0',
+    classes: [],
+  },
+  {
+    day: 'friday',
+    start: '2:30pm',
+    end: '3:25pm',
+    mega: '0',
+    classes: [],
+  },
+];
 
 // fetches data from stickering system, page can be 'classes' or 'students'
 async function fetchData(page) {
@@ -46,7 +168,34 @@ async function fetchData(page) {
 }
 
 // checks to make sure classes can be placed / swapped into certain slots
-function canBePlaced(scheduleData, classId, classes) {
+function canBePlaced(scheduleData, offering, slot) {
+  const classData = scheduleData.filter(o => slot.classes.includes(o.classId));
+
+  // make sure mega status matches that of the slot
+  if (offering.isMega !== slot.mega) {
+    return false;
+  }
+
+  // for each slot
+  Object.values(classData).forEach((e) => {
+    // if the facilitator is the same
+    if (e.facilitator === offering.facilitator) {
+      console.log(1);
+      return false;
+    }
+    // if there are multiple facilitators and one is the same
+    if (e.facilitator.split('&').includes(offering.facilitator)) {
+      console.log(2);
+      return false;
+    }
+    // if there are multiple facils on your class and one is the same
+    if (offering.facilitator.split('&').includes(e.facilitator)) {
+      console.log(3);
+      return false;
+    }
+    return true;
+  });
+
   return true;
 }
 
@@ -63,6 +212,7 @@ function evaluateHurt(scheduleData, classId, classes) {
     scheduleData.filter(o => o.classId === offering)[0].stickers.forEach((sticker) => {
       // if the list of students that have stickered the class we are testing includes a student that has stickered a class in this slot
       if (classStickers.map(classSticker => classSticker.studentId).includes(sticker.studentId)) {
+        // idk what I was thinking when I wrote this
         const stickerValues = [stickerWeights[sticker.priority - 1], stickerWeights[classStickers.filter(s => s.studentId === sticker.studentId)[0].priority - 1]];
         hurt += stickerValues.sort((a, b) => a - b)[0];
       }
@@ -88,15 +238,13 @@ async function buildHurts() {
   const facilitators = Array.from(facilitatorSet).sort((a, b) => (b.match(/&/g) || []).length - (a.match(/&/g) || []).length);
 
   // this is where we should place the first facil's classes onto the schedule somehow
-  scheduleData.filter(offering => offering.facilitator === facilitators[0]).forEach((offering) => {
-    Object.keys(slots).forEach((weekday) => {
-      Object.keys(slots[weekday]).every((slot) => {
-        if (canBePlaced(scheduleData, offering.classId, slots[weekday][slot])) {
-          slots[weekday][slot].classes.push(offering.classId);
-          return false; // returning false breaks the loop here
-        }
-        return true;
-      });
+  scheduleData.filter(o => o.facilitator === facilitators[0]).forEach((offering) => {
+    Object.keys(slots).every((slot) => {
+      if (canBePlaced(scheduleData, offering, slots[slot])) {
+        slots[slot].classes.push(offering.classId);
+        return false; // returning false breaks the loop here
+      }
+      return true;
     });
   });
 
@@ -106,18 +254,79 @@ async function buildHurts() {
   // loop through remaining facilitators
   facilitators.forEach((facilitator) => {
     const facilHurt = [];
+    const placement = [];
+    const classIds = [];
 
     // loop through all classes taught by the currently selected facilitator
-    scheduleData.filter(offering => offering.facilitator === facilitator).forEach((offering) => {
+    Object.values(slots).forEach((slot) => {
       const classHurt = [];
-      Object.keys(slots).forEach((weekday) => {
-        Object.values(slots[weekday]).forEach((slot) => {
-          classHurt.push(evaluateHurt(scheduleData, offering.classId, slot.classes));
-        });
+      // for each school day
+      scheduleData.filter(offering => offering.facilitator === facilitator).forEach((offering) => {
+        classIds.push(offering.classId);
+        // calculate and append hurt
+        classHurt.push(evaluateHurt(scheduleData, offering.classId, slot.classes));
       });
       facilHurt.push(classHurt);
     });
-    console.log(facilHurt);
+
+
+    // for each slot
+    Object.keys(slots).forEach((slot) => {
+      // while true
+      for (; ;) {
+        // find the minimum hurt and store the index
+        const minHurt = Math.min(...facilHurt[slot]);
+        const minIndex = facilHurt[slot].indexOf(minHurt);
+
+        // check if the class has already been (tentatively) placed in the schedule
+        if (placement.includes(minIndex)) {
+          // check if the class we are currently scheduling has a lower hurt than the one that was already scheduled
+          if (facilHurt[placement.indexOf(minIndex)][minIndex] > minHurt) {
+            // swap the class we are currently scheduling and the previously scheduled class
+            if (canBePlaced(scheduleData, scheduleData.filter(offering => offering.classId === classIds[minIndex])[0], slots[slot])) {
+              placement[placement.indexOf(minIndex)] = null;
+              placement.push(minIndex);
+              break;
+            } else {
+              if (facilHurt[slot][minIndex] === 100) {
+                placement.push(null);
+                break;
+              }
+              facilHurt[slot][minIndex] = 100;
+            }
+          } else {
+            // if every class in this time slot has already been checked than move onto the next time slot
+            if (facilHurt[slot][minIndex] === 100) {
+              placement.push(null);
+              break;
+            }
+            facilHurt[slot][minIndex] = 100;
+          }
+        } else if (canBePlaced(scheduleData, scheduleData.filter(offering => offering.classId === classIds[minIndex])[0], slots[slot])) {
+          placement.push(minIndex);
+          break;
+        } else {
+          if (facilHurt[slot][minIndex] === 100) {
+            placement.push(null);
+            break;
+          }
+          facilHurt[slot][minIndex] = 100;
+        }
+      }
+    });
+    // take the 'placement' variable and convert it into actually scheduled classes
+    placement.forEach((classIndex, slot) => {
+      if (classIndex === null) return;
+      slots[slot].classes.push(classIds[classIndex]);
+    });
+  });
+  // log all of the classes at their specific times
+  Object.values(slots).forEach((slot) => {
+    console.log(`${slot.day} ${slot.start}: `);
+    slot.classes.forEach((offering) => {
+      const c = scheduleData.filter(o => o.classId === offering)[0];
+      console.log(`\t${c.className} (${c.facilitator})`);
+    });
   });
 }
 
@@ -130,7 +339,7 @@ function scheduleTest() {
   const slots = ['Mon 9am', 'Mon 10am', 'Mon 11am', 'Mon 1pm', 'Mon 2pm', 'Tue 9am', 'Tue 10am', 'Tue 11am', 'Tue 1pm', 'Tue 2pm', 'Wed 9am', 'Wed 10am', 'Wed 11am', 'Wed 1pm', 'Wed 2pm'];
   const classes = ['High School Jazz Immersion', 'Diverse Voices and Yummy Things', '9th - 12th grade bands', 'Mishmash'];
   const placement = [];
-  const facilhurt = [
+  const facilHurt = [
     [9, 1, 6, 6],
     [1, 3, 5, 5],
     [3, 1, 6, 1],
@@ -151,19 +360,19 @@ function scheduleTest() {
 
   slots.forEach((value, slot) => {
     for (;;) {
-      const minHurt = Math.min(...facilhurt[slot]);
-      const minIndex = facilhurt[slot].indexOf(minHurt);
+      const minHurt = Math.min(...facilHurt[slot]);
+      const minIndex = facilHurt[slot].indexOf(minHurt);
       if (placement.includes(minIndex)) {
-        if (facilhurt[placement.indexOf(minIndex)][minIndex] > minHurt) {
+        if (facilHurt[placement.indexOf(minIndex)][minIndex] > minHurt) {
           placement[placement.indexOf(minIndex)] = null;
           placement.push(minIndex);
           break;
         } else {
-          if (facilhurt[slot][minIndex] === 100) {
+          if (facilHurt[slot][minIndex] === 100) {
             placement.push(null);
             break;
           }
-          facilhurt[slot][minIndex] = 100;
+          facilHurt[slot][minIndex] = 100;
         }
       } else {
         placement.push(minIndex);
