@@ -180,17 +180,14 @@ function canBePlaced(scheduleData, offering, slot) {
   Object.values(classData).forEach((e) => {
     // if the facilitator is the same
     if (e.facilitator === offering.facilitator) {
-      console.log(1);
       return false;
     }
     // if there are multiple facilitators and one is the same
     if (e.facilitator.split('&').includes(offering.facilitator)) {
-      console.log(2);
       return false;
     }
     // if there are multiple facils on your class and one is the same
     if (offering.facilitator.split('&').includes(e.facilitator)) {
-      console.log(3);
       return false;
     }
     return true;
